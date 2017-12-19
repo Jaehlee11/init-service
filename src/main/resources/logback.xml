@@ -1,0 +1,24 @@
+<configuration debug="true">
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%date{dd-MMM-yyyy HH:mm:ss.SSS} [%X{_X_MOA_MSISDN_}] [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="ConfigServer" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <encoder>
+      <pattern>%date{dd-MMM-yyyy HH:mm:ss.SSS} [%X{_X_MOA_MSISDN_}] [%thread] %-5level %logger{35} - %msg%n</pattern>
+    </encoder>
+    <file>/var/log/moa/base/base_ms.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>/var/log/moa/base/base_ms.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <maxHistory>30</maxHistory>
+    </rollingPolicy>
+    <append>true</append>
+  </appender>
+
+  <logger name="org.springframework" level="INFO" />
+  <logger name="net.rubyeye" level="INFO" />
+  <logger name="org.apache.http.wire" level="DEBUG"/>
+
+</configuration>
