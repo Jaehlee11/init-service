@@ -8,8 +8,3 @@ server:
       prefix: access_log
       suffix: .log
       rotate: true
-
-management:
-  security:
-    enabled: false
-  context-path: /manage
