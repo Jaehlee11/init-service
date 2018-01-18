@@ -1,7 +1,7 @@
 FROM frolvlad/alpine-oraclejdk8:slim
 
 EXPOSE 8080
-VOLUME /var/log/moa/base
+VOLUME /var/log/moa
 
 RUN mkdir -p /var/log/moa/base /opt/moa/base/lib
 
