@@ -42,7 +42,7 @@ Parameters:
 
 Conditions:
     NoLoadBalancerCertificateArn: !Equals [!Ref LoadBalancerCertificateArn, '']
-    HasLoadBalancerCertificateArn: !Not [!Ref NoLoadBalancerCertificateArn]]
+    HasLoadBalancerCertificateArn: !Not [!Equals [!Ref LoadBalancerCertificateArn, '']]
 
 Resources:
 
