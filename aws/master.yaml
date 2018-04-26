@@ -1,0 +1,106 @@
+Description: >
+    This template deploys a highly available Application Load Balancer.
+
+Parameters:
+
+    VPC:
+        Type: AWS::EC2::VPC::Id
+        Description: Choose which VPC the security groups should be deployed to
+
+    AllowedHttpCidr:
+        Description: IP range to allow Http access from eg. 1.2.3.4/21
+        Type: String
+        Default: 10.0.0.0/8
+
+    AllowFromPort:
+        Description: Port From to allow Http access from eg. 80
+        Type: String
+        Default: 80
+
+    AllowHttpToPort:
+        Description: Port To allow Http access from eg. 80
+        Type: String
+        Default: 80
+
+    HttpPort:
+        Description: Http Listener eg. 80
+        Type: String
+        Default: 80
+
+    HasLoadBalancerCertificateArn:
+        Description: Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer.
+        Type: String
+        Default: ''
+
+    SubnetA:
+        Description: Choose which subnets LoadBalancer should be deployed to
+        Type: String
+
+    SubnetB:
+        Description: Choose which subnets LoadBalancer should be deployed to
+        Type: String
+
+Conditions:
+    HasLoadBalancerCertificateArn: !Not [!Equals [!Ref LoadBalancerCertificateArn, '']]
+
+Resources:
+
+    LoadBalancerSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            VpcId: !Ref VPC
+            SecurityGroupIngress:
+              - CidrIp: !Ref AllowedHttpCidr
+                IpProtocol: tcp
+                FromPort: !Ref AllowHttpFromPort
+                ToPort: !Ref AllowHttpToPort
+            Tags:
+              - Key: Name
+                Value: !Sub ${AWS::StackName}-LBSG
+
+    LoadBalancer:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+        Properties:
+            Scheme: internal
+            Subnets:
+              - !Ref SubnetA
+              - !Ref SubnetB
+            SecurityGroups:
+              - !Ref LoadBalancerSecurityGroup
+            Tags:
+              - Key: name
+                Value: !Sub ${AWS::StackName}-LB
+
+    LoadBalancerListener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Properties:
+            Certificates:
+              - CertificateArn: !Ref LoadBalancerCertificateArn
+            LoadBalancerArn: !Ref LoadBalancer
+            Port: !Ref HttpPort
+            Protocol: !If [HasLoadBalancerCertificateArn, 'HTTPS', 'HTTP']
+            DefaultActions:
+                - Type: forward
+                  TargetGroupArn: !Ref DefaultTargetGroup
+
+    DefaultTargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            Name: !Sub ${AWS::StackName}-TG
+            VpcId: !Ref VPC
+            Port: !Ref HttpPort
+            Protocol: !If [HasLoadBalancerCertificateArn, 'HTTPS', 'HTTP']
+
+Outputs:
+
+    LoadBalancerSecurityGroup:
+        Description: A reference to the security group for load balancers
+        Value: !Ref LoadBalancerSecurityGroup
+
+    LoadBalancer:
+        Description: A reference to the Application Load Balancer
+        Value: !Ref LoadBalancer
+
+    LoadBalancerUrl:
+        Description: The URL of the ALB
+        Value: !GetAtt LoadBalancer.DNSName
