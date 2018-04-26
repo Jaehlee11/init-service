@@ -12,7 +12,7 @@ Parameters:
         Type: String
         Default: 10.0.0.0/8
 
-    AllowFromPort:
+    AllowHttpFromPort:
         Description: Port From to allow Http access from eg. 80
         Type: String
         Default: 80
@@ -27,7 +27,7 @@ Parameters:
         Type: String
         Default: 80
 
-    HasLoadBalancerCertificateArn:
+    LoadBalancerCertificateArn:
         Description: Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer.
         Type: String
         Default: ''
@@ -41,7 +41,8 @@ Parameters:
         Type: String
 
 Conditions:
-    HasLoadBalancerCertificateArn: !Not [!Equals [!Ref LoadBalancerCertificateArn, '']]
+    NoLoadBalancerCertificateArn: !Equals [!Ref LoadBalancerCertificateArn, '']
+    HasLoadBalancerCertificateArn: !Not [!Ref NoLoadBalancerCertificateArn]]
 
 Resources:
 
@@ -49,6 +50,7 @@ Resources:
         Type: AWS::EC2::SecurityGroup
         Properties:
             VpcId: !Ref VPC
+            GroupDescription: Access to the load balancer
             SecurityGroupIngress:
               - CidrIp: !Ref AllowedHttpCidr
                 IpProtocol: tcp
@@ -71,14 +73,26 @@ Resources:
               - Key: name
                 Value: !Sub ${AWS::StackName}-LB
 
-    LoadBalancerListener:
+    HttpLoadBalancerListener:
         Type: AWS::ElasticLoadBalancingV2::Listener
+        Condition: NoLoadBalancerCertificateArn
+        Properties:
+            LoadBalancerArn: !Ref LoadBalancer
+            Port: !Ref HttpPort
+            Protocol: HTTP
+            DefaultActions:
+                - Type: forward
+                  TargetGroupArn: !Ref DefaultTargetGroup
+
+    HttpsLoadBalancerListener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Condition: HasLoadBalancerCertificateArn
         Properties:
             Certificates:
               - CertificateArn: !Ref LoadBalancerCertificateArn
             LoadBalancerArn: !Ref LoadBalancer
             Port: !Ref HttpPort
-            Protocol: !If [HasLoadBalancerCertificateArn, 'HTTPS', 'HTTP']
+            Protocol: HTTPS
             DefaultActions:
                 - Type: forward
                   TargetGroupArn: !Ref DefaultTargetGroup
